@@ -1,1 +1,1 @@
-{"name":"@game/game-server","version":"1.0.0","main":"index.ts","dependencies":{"@game/shared":"^1.0.0","ws":"^8.21.1"},"devDependencies":{"@types/ws":"^8.18.1"}}
+{"name":"@game/game-server","version":"1.0.0","main":"index.ts","dependencies":{"@game/shared":"^1.0.0","ws":"^8.21.1","zod":"^4.4.3"},"devDependencies":{"@types/ws":"^8.18.1"}}
