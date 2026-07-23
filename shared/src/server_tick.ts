@@ -1,4 +1,4 @@
-interface PlayerState{
+export interface PlayerState{
     player_id : string;
     position : {x : number; y : number};
     alive : boolean;
@@ -6,7 +6,7 @@ interface PlayerState{
     health : number;
 }
 
-interface ServerTick {
+export interface ServerTick {
     tick_number : number;
     server_timestamp : number;
     player_states: PlayerState[];

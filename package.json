@@ -1,0 +1,12 @@
+{
+  "name": "multiplayer-game-server",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "game-server",
+    "matchmaking"
+  ],
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}

@@ -1,6 +1,6 @@
 
 
-interface ClientInputMessage{
+export interface ClientInputMessage{
     player_id: string;
     sequence_number: number;
     client_timestamp: number;
@@ -9,7 +9,7 @@ interface ClientInputMessage{
     action: 'fire' | null;
 }
    
-interface RecordedInput extends ClientInputMessage {
+export interface RecordedInput extends ClientInputMessage {
   server_timestamp: number;
 }
 

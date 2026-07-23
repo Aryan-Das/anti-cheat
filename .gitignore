@@ -1,0 +1,32 @@
+node_modules/
+jspm_packages/
+web_modules/
+
+# TypeScript Build Outputs
+dist/
+out/
+build/
+lib/
+
+# Generated JavaScript files (uncomment if you compile JS directly next to TS files)
+# *.js
+# *.js.map
+# *.d.ts
+
+# TypeScript compilation info & cache
+*.tsbuildinfo
+.eslintcache
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+.env*
+
+
+.DS_Store
+Thumbs.db

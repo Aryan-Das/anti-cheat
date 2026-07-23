@@ -1,29 +1,29 @@
-interface PlayerJoinedEvent {
+export interface PlayerJoinedEvent {
     type : 'player_joined';
     tick_number : number;
     player_id : string;
 }
-interface PlayerLeftEvent {
+export interface PlayerLeftEvent {
     type : 'player_left';
     tick_number : number;
     player_id : string;
 }
-interface PlayerKilledEvent {
+export interface PlayerKilledEvent {
     type : 'player_killed';
     tick_number : number;
     victim_id : string;
     killer_id : string;
 }
 
-interface MatchStartedEvent {
+export interface MatchStartedEvent {
     type : 'match_started';
     tick_number : number;
 }
 
-interface MatchEndedEvent {
+export interface MatchEndedEvent {
     type : 'match_ended';
     tick_number : number;
     scoreboard : Record<string, number>; // player_id to score
 }
 
-type MatchEvent = PlayerJoinedEvent | PlayerLeftEvent | PlayerKilledEvent | MatchStartedEvent | MatchEndedEvent;
+export type MatchEvent = PlayerJoinedEvent | PlayerLeftEvent | PlayerKilledEvent | MatchStartedEvent | MatchEndedEvent;
