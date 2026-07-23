@@ -1,6 +1,6 @@
 import {PlayerConnection} from './types';
 import {ServerTick, RecordedInput, PlayerState} from '@game/shared';
-
+import {WebSocket} from 'ws'
 
 export interface TickResult {
   serverTick: ServerTick;
@@ -80,7 +80,15 @@ export function startTickLoop(registry: Map<string, PlayerConnection>, matchStat
         const res : TickResult = runTick(registry, matchState.activeBuffer, matchState.tick);
         matchState.tick = res.newTick;
         matchState.activeBuffer = res.newActiveBuffer;
-    
+        const jsonTick = JSON.stringify(res.serverTick);
+        registry.forEach((conn: PlayerConnection)=>{
+            if (conn.socket_connection.readyState === WebSocket.OPEN){
+                conn.connected = true;
+                conn.socket_connection.send(jsonTick);
+            } else{
+                conn.connected = false;
+            }
+        });
     }, 33);
 }
 

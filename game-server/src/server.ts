@@ -41,6 +41,7 @@ wss.on('connection', (ws: WebSocket) => {
                     server_timestamp: Date.now()
                 };
                 matchState.submitInput(recordedInput);
+                
             }else{
                 console.log("Invalid schema");
             }
