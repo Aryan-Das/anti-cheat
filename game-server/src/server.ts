@@ -2,7 +2,7 @@ import {WebSocketServer, WebSocket} from 'ws'
 import {PlayerConnection} from './types'
 import {MatchState, startTickLoop} from './tick'
 import {ClientInputMessageSchema} from './validation'
-import {RecordedInput} from '@game/shared'
+import {RecordedInput, WelcomeMessage} from '@game/shared'
 
 const registry = new Map<string, PlayerConnection>();
 const matchState = new MatchState();
@@ -25,6 +25,8 @@ wss.on('connection', (ws: WebSocket) => {
         sequence_number: -1
     }
     registry.set(uuid, conn);
+    const welcome : WelcomeMessage = { type: 'welcome', player_id: uuid };
+    ws.send(JSON.stringify(welcome));
     ws.on('message', (data) => {
         try{
             const message = JSON.parse(data.toString());

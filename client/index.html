@@ -9,9 +9,27 @@
 
 
     <script>
+        let playerId = null;
+        let sequenceNumber = 0;
         const ws = new WebSocket("ws://localhost:8080");
+        const keysHeld = {
+            'KeyS': false,
+            'KeyW': false,
+            'KeyA': false,
+            'KeyD': false
+        };
+
+        document.addEventListener('keydown', (event) => {
+            keysHeld[event.code] = true;
+        });
+
+        document.addEventListener('keyup', (event) => {
+            keysHeld[event.code] = false;
+        });
+
         ws.addEventListener("open", () => {
             console.log("open");
+
         });
         ws.addEventListener("close", ()=> {
             console.log("close");
@@ -21,8 +39,32 @@
         });
         ws.addEventListener("message", (message) => {
             const parsed = JSON.parse(message.data);
+            if (parsed.type == 'welcome'){
+                if (playerId == null){
+                    playerId = parsed.player_id;
+                    setInterval(()=>{
+                        const y = Number(keysHeld['KeyS']) - Number(keysHeld['KeyW']);
+                        const x = Number(keysHeld['KeyD']) - Number(keysHeld['KeyA']);
+                        const movement = {x: x, y:y};
+                        const inputMessage = {
+                            player_id: playerId,
+                            sequence_number: sequenceNumber,
+                            client_timestamp: Date.now(),
+                            movement: movement,
+                            aim_angle: 0,
+                            action: null
+                        }
+                        ws.send(JSON.stringify(inputMessage));
+                    }, 33);
+                }
+            }
+            else{
+                // handle server tick
+            }
             console.log(parsed);
         });
+         
+        
     </script>
 </body>
 </html>

@@ -39,6 +39,7 @@ function runTick(registry: Map<string, PlayerConnection>, input_buffer: Map<stri
             states.push(toPlayerState(conn));
     });
     const serverTick : ServerTick = {
+        type: 'server_tick',
         tick_number : newTick,
         server_timestamp : Date.now(),
         player_states : states
