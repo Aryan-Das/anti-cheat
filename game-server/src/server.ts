@@ -18,7 +18,7 @@ wss.on('connection', (ws: WebSocket) => {
         player_id: uuid,
         tick_joined: matchState.tick,
         socket_connection: ws,
-        position: {x:0, y:0},
+        position: {x:640, y:360},
         alive: true,
         connected: true,
         health: 100,

@@ -6,9 +6,14 @@
     <title>Document</title>
 </head>
 <body>
+    <canvas id="canvas"></canvas>
 
 
     <script>
+        var canvas = document.getElementById('canvas');
+        var ctx = canvas.getContext('2d');
+        canvas.width = 1280;
+        canvas.height = 720;
         let playerId = null;
         let sequenceNumber = 0;
         const ws = new WebSocket("ws://localhost:8080");
@@ -55,15 +60,25 @@
                             action: null
                         }
                         ws.send(JSON.stringify(inputMessage));
+                        sequenceNumber++;
                     }, 33);
                 }
             }
             else{
-                // handle server tick
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                parsed.player_states.forEach((player_state) => {
+                    
+                    ctx.beginPath();
+
+                    ctx.arc(player_state.position.x, player_state.position.y, 30, 0, 2 * Math.PI);
+
+                    ctx.fillStyle = (player_state.connected && player_state.alive) ? player_state.player_id === playerId ? '#4da6ff' : '#CC0000': '#000000'; 
+                    ctx.fill();
+                });
             }
             console.log(parsed);
         });
-         
+                 
         
     </script>
 </body>
