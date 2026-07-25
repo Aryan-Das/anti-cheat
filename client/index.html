@@ -12,6 +12,10 @@
     <script>
         var canvas = document.getElementById('canvas');
         var ctx = canvas.getContext('2d');
+        let myPosition = { x: 0, y: 0 };
+        let mouseX = 0;
+        let mouseY = 0;
+        let aimAngle = 0;
         canvas.width = 1280;
         canvas.height = 720;
         let playerId = null;
@@ -23,7 +27,7 @@
             'KeyA': false,
             'KeyD': false
         };
-
+        
         document.addEventListener('keydown', (event) => {
             keysHeld[event.code] = true;
         });
@@ -31,7 +35,13 @@
         document.addEventListener('keyup', (event) => {
             keysHeld[event.code] = false;
         });
-
+        canvas.addEventListener('mousemove', function(event) {
+            const rect = canvas.getBoundingClientRect();
+    
+            mouseX = event.clientX - rect.left;
+            mouseY = event.clientY - rect.top;
+    
+        });
         ws.addEventListener("open", () => {
             console.log("open");
 
@@ -51,12 +61,13 @@
                         const y = Number(keysHeld['KeyS']) - Number(keysHeld['KeyW']);
                         const x = Number(keysHeld['KeyD']) - Number(keysHeld['KeyA']);
                         const movement = {x: x, y:y};
+                        aimAngle = Math.atan2(mouseY - myPosition.y, mouseX - myPosition.x);
                         const inputMessage = {
                             player_id: playerId,
                             sequence_number: sequenceNumber,
                             client_timestamp: Date.now(),
                             movement: movement,
-                            aim_angle: 0,
+                            aim_angle: aimAngle, 
                             action: null
                         }
                         ws.send(JSON.stringify(inputMessage));
@@ -67,14 +78,26 @@
             else{
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 parsed.player_states.forEach((player_state) => {
-                    
+                    if(player_state.player_id === playerId){
+                        myPosition = player_state.position;
+    
+                        const targetX = myPosition.x + 60 * Math.cos(aimAngle);
+                        const targetY = myPosition.y + 60 * Math.sin(aimAngle);
+                        ctx.lineWidth = 10;
+                        ctx.strokeStyle = "red"; 
+                        ctx.beginPath();
+                        ctx.moveTo(myPosition.x, myPosition.y);
+                        ctx.lineTo(targetX, targetY);
+                        ctx.stroke();
+                    }
+
                     ctx.beginPath();
 
                     ctx.arc(player_state.position.x, player_state.position.y, 30, 0, 2 * Math.PI);
 
                     ctx.fillStyle = (player_state.connected && player_state.alive) ? player_state.player_id === playerId ? '#4da6ff' : '#CC0000': '#000000'; 
                     ctx.fill();
-                });
+                                    });
             }
             console.log(parsed);
         });
