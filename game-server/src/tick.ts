@@ -8,7 +8,7 @@ export interface TickResult {
   newActiveBuffer: Map<string, RecordedInput>;
 }
 
-export const MAX_SPEED_PER_TICK : number = 5.0;
+export const MAX_SPEED_PER_TICK : number = 12.0;
 
 export function runTick(registry: Map<string, PlayerConnection>, input_buffer: Map<string, RecordedInput>, tick: number): TickResult {
     const newActiveBuffer: Map<string, RecordedInput> = new Map();
