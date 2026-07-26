@@ -31,6 +31,8 @@ export interface ShotFiredEvent {
     tick_number: number;
     shooter_id: string;
     end_point: { x: number; y: number };
+    
+    start_point: { x: number; y: number };   
     hit_player_id: string | null;
 }
 

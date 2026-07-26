@@ -19,9 +19,10 @@
         canvas.width = 1280;
         canvas.height = 720;
         let playerId = null;
-      
+        
         let sequenceNumber = 0;
         let isFiring = false;
+        let shotsToRender = [];
         const ws = new WebSocket("ws://localhost:8080");
         const keysHeld = {
             'KeyS': false,
@@ -84,7 +85,7 @@
                     }, 33);
                 }
             }
-            else{
+            else if(parsed.type == 'server_tick'){
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 parsed.player_states.forEach((player_state) => {
                     if(player_state.player_id === playerId){
@@ -107,6 +108,18 @@
                     ctx.fillStyle = (player_state.connected && player_state.alive) ? player_state.player_id === playerId ? '#4da6ff' : '#CC0000': '#000000'; 
                     ctx.fill();
                                     });
+            }
+            else if(parsed.type == 'shot_fired') {
+                shotsToRender.push({
+                    tick_number: parsed.tick_number,
+                    end_point: parsed.end_point,
+                    start_point: parsed.start_point,
+                    shooter_id: parsed.shooter_id,
+                    hit_player_id: parsed.hit_player_id
+                });
+            }
+            else if(parsed.type == 'player_killed'){
+                console.log(parsed.victim_id + " killed by " + parsed.killer_id);
             }
             console.log(parsed);
         });

@@ -51,6 +51,7 @@ export function runTick(registry: Map<string, PlayerConnection>, input_buffer: M
                 tick_number: tick,
                 shooter_id: shooterId,
                 end_point: computeRayEndPoint(shooter.position, input.aim_angle, MAX_RANGE),
+                start_point: shooter.position,
                 hit_player_id: null 
         };
         if (closestHit) {
@@ -63,6 +64,7 @@ export function runTick(registry: Map<string, PlayerConnection>, input_buffer: M
                 tick_number: tick,
                 shooter_id: shooterId,
                 end_point: conn.position,
+                start_point: shooter.position,
                 hit_player_id: hit.targetId
             };      
             events.push(shotEvent);
