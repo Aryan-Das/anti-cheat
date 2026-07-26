@@ -26,4 +26,12 @@ export interface MatchEndedEvent {
     scoreboard : Record<string, number>; // player_id to score
 }
 
-export type MatchEvent = PlayerJoinedEvent | PlayerLeftEvent | PlayerKilledEvent | MatchStartedEvent | MatchEndedEvent;
+export interface ShotFiredEvent {
+    type: 'shot_fired';
+    tick_number: number;
+    shooter_id: string;
+    end_point: { x: number; y: number };
+    hit_player_id: string | null;
+}
+
+export type MatchEvent = PlayerJoinedEvent | PlayerLeftEvent | PlayerKilledEvent | MatchStartedEvent | MatchEndedEvent | ShotFiredEvent;
