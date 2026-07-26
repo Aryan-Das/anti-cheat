@@ -22,3 +22,13 @@ export function detectHit(shooter_position: {x: number, y: number}, aim_angle: n
     return {hit: perpendicularDistance <= hit_radius, perpendicular_dist: perpendicularDistance, distance_along_ray: dot}
 
 }
+
+export function computeRayEndPoint(origin: {x: number, y:number}, angle: number, max_distance: number) : {x: number, y: number} {
+    const dir = {x: Math.cos(angle), y: Math.sin(angle)};
+    return {
+        x: origin.x + dir.x * max_distance,
+        y: origin.y + dir.y * max_distance
+    };
+
+
+}

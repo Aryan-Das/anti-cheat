@@ -1,7 +1,7 @@
 import {PlayerConnection} from './types';
-import {ServerTick, RecordedInput, PlayerState, MatchEvent, PlayerKilledEvent} from '@game/shared';
+import {ServerTick, RecordedInput, PlayerState, MatchEvent, PlayerKilledEvent, ShotFiredEvent} from '@game/shared';
 import {WebSocket} from 'ws'
-import {detectHit} from './hit_detection'
+import {detectHit, computeRayEndPoint} from './hit_detection'
 
 export interface TickResult {
     serverTick: ServerTick;
@@ -32,6 +32,8 @@ export function runTick(registry: Map<string, PlayerConnection>, input_buffer: M
         if (tick - shooter.last_fired_tick < SHOT_TICK_COOLDOWN) return;
         shooter.last_fired_tick = tick;
         
+        
+
         let closestHit: { targetId: string; distance_along_ray: number } | null = null;
         
         registry.forEach((target, targetId) => {
@@ -43,12 +45,27 @@ export function runTick(registry: Map<string, PlayerConnection>, input_buffer: M
             closestHit = { targetId, distance_along_ray: result.distance_along_ray };
             }
         });
-        
+       
+        let shotEvent : ShotFiredEvent = {
+                type: 'shot_fired',
+                tick_number: tick,
+                shooter_id: shooterId,
+                end_point: computeRayEndPoint(shooter.position, input.aim_angle, MAX_RANGE),
+                hit_player_id: null 
+        };
         if (closestHit) {
             const hit: { targetId: string; distance_along_ray: number } = closestHit;
             const conn = registry.get(hit.targetId);
             if(!conn) return;
             conn.health -= DAMAGE;
+            shotEvent = {
+                type: 'shot_fired',
+                tick_number: tick,
+                shooter_id: shooterId,
+                end_point: conn.position,
+                hit_player_id: hit.targetId
+            };      
+            events.push(shotEvent);
             if (conn.health <= 0){
                 conn.alive = false;
                 const killedEvent : PlayerKilledEvent = {
@@ -59,7 +76,9 @@ export function runTick(registry: Map<string, PlayerConnection>, input_buffer: M
                 };
                 events.push(killedEvent);
             }
+
         }
+        else events.push(shotEvent);      
     });
     bufferEntries.forEach((element: [string, RecordedInput]) => {
         const connection = registry.get(element[0]);
