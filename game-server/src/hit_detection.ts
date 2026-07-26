@@ -1,5 +1,5 @@
 
-export function detectHit(shooter_position: {x: number, y: number}, aim_angle: number, target_position: {x:number, y: number}, max_range: number, hit_radius: number) : {hit: boolean, perpendicular_dist: number} {
+export function detectHit(shooter_position: {x: number, y: number}, aim_angle: number, target_position: {x:number, y: number}, max_range: number, hit_radius: number) : {hit: boolean, perpendicular_dist: number, distance_along_ray: number} {
     const dir = {x: Math.cos(aim_angle), y: Math.sin(aim_angle)};
     const shooter_to_target = {
         x: target_position.x - shooter_position.x , 
@@ -10,7 +10,8 @@ export function detectHit(shooter_position: {x: number, y: number}, aim_angle: n
     if (dot < 0 || dot > max_range){
         return {
             hit: false,
-            perpendicular_dist: -1
+            perpendicular_dist: -1,
+            distance_along_ray: -1
         };
     }
     const closestPoint = {
@@ -18,6 +19,6 @@ export function detectHit(shooter_position: {x: number, y: number}, aim_angle: n
         y: shooter_position.y + dir.y * dot
     }; 
     const perpendicularDistance = Math.hypot(target_position.x - closestPoint.x, target_position.y - closestPoint.y);
-    return {hit: perpendicularDistance <= hit_radius, perpendicular_dist: perpendicularDistance}
+    return {hit: perpendicularDistance <= hit_radius, perpendicular_dist: perpendicularDistance, distance_along_ray: dot}
 
 }

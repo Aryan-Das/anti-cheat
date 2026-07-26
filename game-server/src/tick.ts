@@ -1,20 +1,65 @@
 import {PlayerConnection} from './types';
-import {ServerTick, RecordedInput, PlayerState} from '@game/shared';
+import {ServerTick, RecordedInput, PlayerState, MatchEvent, PlayerKilledEvent} from '@game/shared';
 import {WebSocket} from 'ws'
+import {detectHit} from './hit_detection'
 
 export interface TickResult {
-  serverTick: ServerTick;
-  newTick: number;
-  newActiveBuffer: Map<string, RecordedInput>;
+    serverTick: ServerTick;
+    newTick: number;
+    newActiveBuffer: Map<string, RecordedInput>;
+    events: MatchEvent[];
 }
 
 export const MAX_SPEED_PER_TICK : number = 12.0;
+export const DAMAGE = 15.0;
+export const MAX_RANGE = 200.0;
+export const HIT_RADIUS = 30;
+export const SHOT_TICK_COOLDOWN = 10.0;
 
 export function runTick(registry: Map<string, PlayerConnection>, input_buffer: Map<string, RecordedInput>, tick: number): TickResult {
     const newActiveBuffer: Map<string, RecordedInput> = new Map();
     const bufferEntries = [...input_buffer];
     bufferEntries.sort((a: [string, RecordedInput], b: [string, RecordedInput]) => {
         return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0
+    });
+    const events: MatchEvent[] = [];
+
+    bufferEntries.forEach(([shooterId, input]) => {
+        if (input.action !== 'fire') return;
+        
+        const shooter = registry.get(shooterId);
+        if (!shooter) return; 
+        if (tick - shooter.last_fired_tick < SHOT_TICK_COOLDOWN) return;
+        shooter.last_fired_tick = tick;
+        
+        let closestHit: { targetId: string; distance_along_ray: number } | null = null;
+        
+        registry.forEach((target, targetId) => {
+            if (targetId === shooterId) return;        
+            if (!target.alive || !target.connected) return; 
+            
+            const result = detectHit(shooter.position, input.aim_angle, target.position, MAX_RANGE, HIT_RADIUS);
+            if (result.hit && (closestHit === null || result.distance_along_ray < closestHit.distance_along_ray)) {
+            closestHit = { targetId, distance_along_ray: result.distance_along_ray };
+            }
+        });
+        
+        if (closestHit) {
+            const hit: { targetId: string; distance_along_ray: number } = closestHit;
+            const conn = registry.get(hit.targetId);
+            if(!conn) return;
+            conn.health -= DAMAGE;
+            if (conn.health <= 0){
+                conn.alive = false;
+                const killedEvent : PlayerKilledEvent = {
+                    type: 'player_killed',
+                    tick_number: tick,
+                    victim_id: hit.targetId,
+                    killer_id: shooterId
+                };
+                events.push(killedEvent);
+            }
+        }
     });
     bufferEntries.forEach((element: [string, RecordedInput]) => {
         const connection = registry.get(element[0]);
@@ -32,7 +77,6 @@ export function runTick(registry: Map<string, PlayerConnection>, input_buffer: M
             console.log("Could not find connection: " + element[0]);
         }
     });
-    // TODO: hit detection / game logic
     const newTick = tick + 1;  
     const states : PlayerState[] = new Array();
     registry.forEach((conn, id) => {
@@ -42,12 +86,13 @@ export function runTick(registry: Map<string, PlayerConnection>, input_buffer: M
         type: 'server_tick',
         tick_number : newTick,
         server_timestamp : Date.now(),
-        player_states : states
+        player_states : states,
     };
     return {
         serverTick,
         newTick,
-        newActiveBuffer
+        newActiveBuffer,
+        events
     };    
 }
 
@@ -82,11 +127,12 @@ export function startTickLoop(registry: Map<string, PlayerConnection>, matchStat
         matchState.tick = res.newTick;
         matchState.activeBuffer = res.newActiveBuffer;
         const jsonTick = JSON.stringify(res.serverTick);
+        const jsonEvents = res.events.map(event => JSON.stringify(event));
         registry.forEach((conn: PlayerConnection)=>{
             if (conn.socket_connection.readyState === WebSocket.OPEN){
                 conn.connected = true;
                 conn.socket_connection.send(jsonTick);
-            } else{
+                jsonEvents.forEach(jsonEvent => conn.socket_connection.send(jsonEvent));            } else{
                 conn.connected = false;
             }
         });

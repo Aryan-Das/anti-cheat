@@ -9,4 +9,5 @@ export interface PlayerConnection {
     connected : boolean;
     health : number;
     sequence_number : number;
+    last_fired_tick : number;
 }

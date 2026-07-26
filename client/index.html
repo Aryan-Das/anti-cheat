@@ -19,7 +19,9 @@
         canvas.width = 1280;
         canvas.height = 720;
         let playerId = null;
+      
         let sequenceNumber = 0;
+        let isFiring = false;
         const ws = new WebSocket("ws://localhost:8080");
         const keysHeld = {
             'KeyS': false,
@@ -34,6 +36,13 @@
 
         document.addEventListener('keyup', (event) => {
             keysHeld[event.code] = false;
+        });
+
+        document.addEventListener('mouseup', (event) => {
+            isFiring = false;
+        });
+        document.addEventListener('mousedown', (event) => {
+            isFiring = true;
         });
         canvas.addEventListener('mousemove', function(event) {
             const rect = canvas.getBoundingClientRect();
@@ -68,7 +77,7 @@
                             client_timestamp: Date.now(),
                             movement: movement,
                             aim_angle: aimAngle, 
-                            action: null
+                            action: isFiring? 'fire' : null
                         }
                         ws.send(JSON.stringify(inputMessage));
                         sequenceNumber++;

@@ -10,7 +10,7 @@ describe('detectHit', () => {
             200,
             30
         );
-        expect(hit).toEqual({hit: true, perpendicular_dist: 0});
+        expect(hit).toEqual({hit: true, perpendicular_dist: 0, distance_along_ray:100});
     });
     test('clear miss', () => {
         const hit = detectHit(
@@ -31,7 +31,7 @@ describe('detectHit', () => {
             200,
             30
         );
-        expect(hit).toEqual({hit: false, perpendicular_dist: -1});
+        expect(hit).toEqual({hit: false, perpendicular_dist: -1, distance_along_ray: -1});
     });
     test('target out of range', () => {
         const hit = detectHit(
@@ -41,6 +41,6 @@ describe('detectHit', () => {
             200,
             30
         );
-        expect(hit).toEqual({hit: false, perpendicular_dist: -1});
+        expect(hit).toEqual({hit: false, perpendicular_dist: -1, distance_along_ray:-1});
     });
 });

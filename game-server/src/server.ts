@@ -22,7 +22,8 @@ wss.on('connection', (ws: WebSocket) => {
         alive: true,
         connected: true,
         health: 100,
-        sequence_number: -1
+        sequence_number: -1,
+        last_fired_tick: -1000
     }
     registry.set(uuid, conn);
     const welcome : WelcomeMessage = { type: 'welcome', player_id: uuid };
