@@ -4,7 +4,8 @@
   "workspaces": [
     "shared",
     "game-server",
-    "matchmaking"
+    "matchmaking",
+    "db"
   ],
   "devDependencies": {
     "typescript": "^7.0.2"
