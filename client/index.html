@@ -19,7 +19,7 @@
         canvas.width = 1280;
         canvas.height = 720;
         let playerId = null;
-        
+        const maxDuration = 5;
         let sequenceNumber = 0;
         let isFiring = false;
         let shotsToRender = [];
@@ -87,6 +87,22 @@
             }
             else if(parsed.type == 'server_tick'){
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+                shotsToRender = shotsToRender.filter((shot) => {return parsed.tick_number - shot.tick_number < maxDuration});
+                
+                shotsToRender.forEach((shot)  => {
+                
+                    const opacity = 1 - ((parsed.tick_number - shot.tick_number) / maxDuration);
+                    
+                         
+                    console.log(opacity, ctx.strokeStyle);
+                    ctx.strokeStyle = "rgba(150,150,150," + opacity.toString() + ")";
+                    ctx.beginPath();
+                    ctx.moveTo(shot.start_point.x, shot.start_point.y);
+                    ctx.lineTo(shot.end_point.x, shot.end_point.y);
+                    ctx.lineWidth = 5;
+                    
+                    ctx.stroke();
+                });
                 parsed.player_states.forEach((player_state) => {
                     if(player_state.player_id === playerId){
                         myPosition = player_state.position;
@@ -121,7 +137,6 @@
             else if(parsed.type == 'player_killed'){
                 console.log(parsed.victim_id + " killed by " + parsed.killer_id);
             }
-            console.log(parsed);
         });
                  
         

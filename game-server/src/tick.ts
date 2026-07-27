@@ -12,7 +12,7 @@ export interface TickResult {
 
 export const MAX_SPEED_PER_TICK : number = 12.0;
 export const DAMAGE = 15.0;
-export const MAX_RANGE = 200.0;
+export const MAX_RANGE = 900.0;
 export const HIT_RADIUS = 30;
 export const SHOT_TICK_COOLDOWN = 10.0;
 
@@ -23,7 +23,6 @@ export function runTick(registry: Map<string, PlayerConnection>, input_buffer: M
         return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0
     });
     const events: MatchEvent[] = [];
-
     bufferEntries.forEach(([shooterId, input]) => {
         if (input.action !== 'fire') return;
         
@@ -59,6 +58,7 @@ export function runTick(registry: Map<string, PlayerConnection>, input_buffer: M
             const conn = registry.get(hit.targetId);
             if(!conn) return;
             conn.health -= DAMAGE;
+            console.log("bang");
             shotEvent = {
                 type: 'shot_fired',
                 tick_number: tick,
@@ -153,7 +153,8 @@ export function startTickLoop(registry: Map<string, PlayerConnection>, matchStat
             if (conn.socket_connection.readyState === WebSocket.OPEN){
                 conn.connected = true;
                 conn.socket_connection.send(jsonTick);
-                jsonEvents.forEach(jsonEvent => conn.socket_connection.send(jsonEvent));            } else{
+                jsonEvents.forEach(jsonEvent => conn.socket_connection.send(jsonEvent));
+            } else{
                 conn.connected = false;
             }
         });
