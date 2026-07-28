@@ -2,6 +2,8 @@ import {PlayerConnection} from './types';
 import {ServerTick, RecordedInput, PlayerState, MatchEvent, PlayerKilledEvent, ShotFiredEvent} from '@game/shared';
 import {WebSocket} from 'ws'
 import {detectHit, computeRayEndPoint} from './hit_detection'
+import { sql, eq, and, db, matchPlayers } from '@game/db';
+
 
 export interface TickResult {
     serverTick: ServerTick;
@@ -141,11 +143,19 @@ export class MatchState {
 
 
 
-export function startTickLoop(registry: Map<string, PlayerConnection>, matchState : MatchState): void {
+export function startTickLoop(registry: Map<string, PlayerConnection>, matchState : MatchState,currentMatchId : string): void {
 
-    setInterval(() => {
+    setInterval(async () => {
         const res : TickResult = runTick(registry, matchState.activeBuffer, matchState.tick);
-        matchState.tick = res.newTick;
+        
+        for (const event of res.events.filter(e => e.type === 'player_killed')) {
+          await db.update(matchPlayers)
+            .set({ kills: sql`${matchPlayers.kills} + 1` })
+            .where(and(eq(matchPlayers.match_id, currentMatchId), eq(matchPlayers.player_id, event.killer_id)));
+          await db.update(matchPlayers)
+            .set({ deaths: sql`${matchPlayers.deaths} + 1` })
+            .where(and(eq(matchPlayers.match_id, currentMatchId), eq(matchPlayers.player_id, event.victim_id)));
+        }        matchState.tick = res.newTick;
         matchState.activeBuffer = res.newActiveBuffer;
         const jsonTick = JSON.stringify(res.serverTick);
         const jsonEvents = res.events.map(event => JSON.stringify(event));
