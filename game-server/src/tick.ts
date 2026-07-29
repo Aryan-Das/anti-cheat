@@ -1,8 +1,8 @@
 import {PlayerConnection} from './types';
-import {ServerTick, RecordedInput, PlayerState, MatchEvent, PlayerKilledEvent, ShotFiredEvent} from '@game/shared';
+import {ServerTick, RecordedInput, PlayerState, MatchEvent, PlayerKilledEvent, ShotFiredEvent, MatchEndedEvent} from '@game/shared';
 import {WebSocket} from 'ws'
 import {detectHit, computeRayEndPoint} from './hit_detection'
-import { sql, eq, and, db, matchPlayers } from '@game/db';
+import { sql, eq, and, db, matchPlayers, matches } from '@game/db';
 
 
 export interface TickResult {
@@ -78,12 +78,28 @@ export function runTick(registry: Map<string, PlayerConnection>, input_buffer: M
                     victim_id: hit.targetId,
                     killer_id: shooterId
                 };
+                conn.deaths += 1;
+                shooter.kills += 1;
                 events.push(killedEvent);
             }
 
         }
         else events.push(shotEvent);      
     });
+    const aliveConnected = [...registry.values()].filter(conn => conn.alive && conn.connected);
+    if (registry.size > 1 && aliveConnected.length <= 1) {
+        const scoreboard :Record<string, number>  = {};
+        registry.forEach((conn) => {
+            scoreboard[conn.player_id] = conn.kills;
+        });
+        const matchEndedEvent : MatchEndedEvent = {
+            type: 'match_ended',
+            tick_number: tick,
+            scoreboard
+        };
+        events.push(matchEndedEvent);
+
+    }
     bufferEntries.forEach((element: [string, RecordedInput]) => {
         const connection = registry.get(element[0]);
         if (connection){
@@ -145,17 +161,52 @@ export class MatchState {
 
 export function startTickLoop(registry: Map<string, PlayerConnection>, matchState : MatchState,currentMatchId : string): void {
 
-    setInterval(async () => {
+    const intervalId = setInterval(async () => {
         const res : TickResult = runTick(registry, matchState.activeBuffer, matchState.tick);
-        
+        for(const event of res.events.filter(e => e.type === 'match_ended')) {
+            // postgres write
+            await db.update(matches)
+                .set({ended_at: new Date()}) 
+                .where(eq(matches.id, currentMatchId));
+            clearInterval(intervalId);
+
+            let winnerId;
+            const alive = [...registry.values()].filter(conn => conn.alive);
+            if (alive.length > 0) {
+              winnerId = alive[0].player_id;
+            }           
+            else{   
+            // tiebreak with kills
+                
+                const maxScore = Object.entries(event.scoreboard).reduce((max, current) => {
+                    return current[1] > max[1] ? current : max;
+                }, ["", -Infinity] as [string, number]);
+                winnerId = maxScore[0];
+            }
+            registry.forEach( async (conn, id) => {
+                if(id != winnerId){
+                     await db.update(matchPlayers)
+                        .set({ result: 'loss' })
+                        .where(and(eq(matchPlayers.match_id, currentMatchId), eq(matchPlayers.player_id, id)));
+                }
+                
+            });
+            await db.update(matchPlayers)
+                        .set({ result: 'win' })
+                        .where(and(eq(matchPlayers.match_id, currentMatchId), eq(matchPlayers.player_id, winnerId)));
+
+            
+
+        }
         for (const event of res.events.filter(e => e.type === 'player_killed')) {
-          await db.update(matchPlayers)
-            .set({ kills: sql`${matchPlayers.kills} + 1` })
-            .where(and(eq(matchPlayers.match_id, currentMatchId), eq(matchPlayers.player_id, event.killer_id)));
-          await db.update(matchPlayers)
-            .set({ deaths: sql`${matchPlayers.deaths} + 1` })
-            .where(and(eq(matchPlayers.match_id, currentMatchId), eq(matchPlayers.player_id, event.victim_id)));
-        }        matchState.tick = res.newTick;
+            await db.update(matchPlayers)
+                .set({ kills: sql`${matchPlayers.kills} + 1` })
+                .where(and(eq(matchPlayers.match_id, currentMatchId), eq(matchPlayers.player_id, event.killer_id)));
+            await db.update(matchPlayers)
+                .set({ deaths: sql`${matchPlayers.deaths} + 1` })
+                .where(and(eq(matchPlayers.match_id, currentMatchId), eq(matchPlayers.player_id, event.victim_id)));
+        }        
+        matchState.tick = res.newTick;
         matchState.activeBuffer = res.newActiveBuffer;
         const jsonTick = JSON.stringify(res.serverTick);
         const jsonEvents = res.events.map(event => JSON.stringify(event));

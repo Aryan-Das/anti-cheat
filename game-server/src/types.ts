@@ -10,4 +10,6 @@ export interface PlayerConnection {
     health : number;
     sequence_number : number;
     last_fired_tick : number;
+    kills: number;
+    deaths: number;
 }

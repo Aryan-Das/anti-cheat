@@ -27,7 +27,9 @@ async function main(): Promise<void> {
             connected: true,
             health: 100,
             sequence_number: -1,
-            last_fired_tick: -1000
+            last_fired_tick: -1000,
+            kills: 0,
+            deaths: 0
         }
         registry.set(uuid, conn);
         await db.insert(players).values({ id: uuid }).onConflictDoNothing();
