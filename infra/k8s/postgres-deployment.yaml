@@ -17,6 +17,11 @@ spec:
           image: postgres:16
           ports:
             - containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "game_user", "-d", "game_db"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
           envFrom:
             - secretRef:
                 name: postgres-credentials

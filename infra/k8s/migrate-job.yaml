@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:16
+          command: ['sh', '-c', 'until pg_isready -h postgres -U game_user -d game_db; do echo waiting for postgres; sleep 2; done']
+      containers:
+        - name: migrate
+          image: migrate:latest
+          imagePullPolicy: Never
+          command: ["npm", "run", "migrate", "--workspace=db"]
+          env:
+            - name: DATABASE_URL
+              value: "postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)"
+          envFrom:
+            - secretRef:
+                name: postgres-credentials

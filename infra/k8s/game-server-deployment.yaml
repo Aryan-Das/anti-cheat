@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: game-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: game-server
+  template:
+    metadata:
+      labels:
+        app: game-server
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:16
+          command: ['sh', '-c', 'until pg_isready -h postgres -U game_user -d game_db; do echo waiting for postgres; sleep 2; done; echo "waiting extra for migrations"; sleep 15']
+      containers:
+        - name: game-server
+          image: game-server:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DATABASE_URL
+              value: "postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)"
+          envFrom:
+            - secretRef:
+                name: postgres-credentials
